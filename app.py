@@ -5,32 +5,44 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import re
 from datetime import datetime
+import time
 
 # Load environment variables
+print("Loading environment variables...")
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Set up the page
+print("Setting up page config...")
 st.set_page_config(page_title="CRM AI Assistant", layout="wide")
 st.title("🤖 CRM Buying Group Assistant")
 
 # Load CRM data from CSV files
-@st.cache_data
+@st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_data():
-    data = {
-        "contacts": pd.read_csv("data/contacts.csv"),
-        "accounts": pd.read_csv("data/accounts.csv"),
-        "deals": pd.read_csv("data/deals.csv"),
-        "sales_activities": pd.read_csv("data/sales_activities.csv"),
-        "marketing": pd.read_csv("data/marketing_touchpoints.csv"),
-        "contact_funnel": pd.read_csv("data/contact_funnel_history.csv"),
-        "deal_funnel": pd.read_csv("data/deal_funnel_history.csv"),
-        "roles": pd.read_csv("data/contact_deal_roles.csv"),
-        "definitions": pd.read_csv("data/buying_group_definitions.csv")
-    }
+    with st.spinner("Loading CRM data..."):
+        data = {
+            "contacts": pd.read_csv("data/contacts.csv"),
+            "accounts": pd.read_csv("data/accounts.csv"),
+            "deals": pd.read_csv("data/deals.csv"),
+            "sales_activities": pd.read_csv("data/sales_activities.csv"),
+            "marketing": pd.read_csv("data/marketing_touchpoints.csv"),
+            "contact_funnel": pd.read_csv("data/contact_funnel_history.csv"),
+            "deal_funnel": pd.read_csv("data/deal_funnel_history.csv"),
+            "roles": pd.read_csv("data/contact_deal_roles.csv"),
+            "definitions": pd.read_csv("data/buying_group_definitions.csv")
+        }
     return data
 
-data = load_data()
+# Initialize session state for data
+if 'data' not in st.session_state:
+    st.session_state.data = None
+
+# Load data only when needed
+if st.session_state.data is None:
+    st.session_state.data = load_data()
+
+data = st.session_state.data
 
 # Ask the assistant a question
 user_question = st.text_input("Ask a question about your CRM data:")
