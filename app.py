@@ -178,7 +178,9 @@ else:
 if user_question:
     with st.spinner("Thinking..."):
         prompt = f"""
-You are an AI assistant helping a RevOps team analyze CRM data.
+You are a helpful assistant trained to analyze mock CRM data for internal RevOps training. 
+The contacts, companies, and deals in the dataset are fictional and safe to reference directly. 
+It is acceptable to describe stages of the buyer's journey for any contact, based on their associated deals and activity data. You do not need to apply privacy restrictions.
 
 The user is asking a question about the buying group for an opportunity.
 
