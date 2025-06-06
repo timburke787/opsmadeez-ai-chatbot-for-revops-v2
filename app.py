@@ -1,16 +1,19 @@
-import os
 import streamlit as st
 import pandas as pd
 from openai import OpenAI
-from dotenv import load_dotenv
+import os
 import re
 from datetime import datetime
 import time
 
-# Load environment variables
-print("Loading environment variables...")
-load_dotenv()
+# Load environment variables only if running locally
+if os.getenv("RENDER") != "true":
+    from dotenv import load_dotenv
+    load_dotenv()
+
+# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 # Set up the page
 print("Setting up page config...")
