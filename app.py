@@ -4,6 +4,7 @@ import pandas as pd
 from openai import OpenAI
 from dotenv import load_dotenv
 import re
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -91,6 +92,16 @@ buying_group_roles = data["roles"].rename(columns={
     "Is Primary": "is_primary"
 })
 
+# Rename marketing touchpoint fields
+marketing_df = data["marketing"].rename(columns={
+    "Contact ID": "contact_id",
+    "Touchpoint Type": "touchpoint_type",
+    "Date": "touchpoint_date",
+    "Channel": "channel",
+    "Content": "content",
+    "Response": "response"
+})
+
 # Merge to create full buying group view
 buying_group_df = buying_group_roles.merge(contacts_df, on="contact_id").merge(deals_df, on="opportunity_id")
 
@@ -127,12 +138,19 @@ if opp_name:
     selected_group = buying_group_df[buying_group_df["opportunity_name"].str.lower() == opp_name.lower()]
     contact_ids = selected_group["contact_id"].unique()
     activity_subset = sales_activity_df[sales_activity_df["contact_id"].isin(contact_ids)]
+    marketing_subset = marketing_df[marketing_df["contact_id"].isin(contact_ids)]
+
+    # Sort activities by date
+    activity_subset = activity_subset.sort_values("activity_date")
+    marketing_subset = marketing_subset.sort_values("touchpoint_date")
 
     group_records = selected_group.to_dict(orient="records")
     activity_records = activity_subset.to_dict(orient="records")
+    marketing_records = marketing_subset.to_dict(orient="records")
 else:
     group_records = []
     activity_records = []
+    marketing_records = []
 
 # Optional: Debug helpers
 # st.write("📊 sales_activity_df columns:", sales_activity_df.columns.tolist())
@@ -163,12 +181,20 @@ Your goals:
    - The least engaged contact
    - Any contacts who haven't been touched recently
    - Summaries of the last few activities if available
+3. Analyze the buyer's journey by:
+   - Creating a chronological timeline of all marketing and sales touchpoints
+   - Identifying key moments in the buyer's journey
+   - Highlighting any gaps in engagement
+   - Suggesting next steps based on the journey analysis
 
 Here is the buying group for the opportunity '{opp_name}' (if found):
 {group_records}
 
 Here are the sales activities involving those contacts:
 {activity_records}
+
+Here are the marketing touchpoints for those contacts:
+{marketing_records}
 
 Now, based on the question below and the data above, provide an analysis or answer:
 
@@ -177,7 +203,7 @@ Now, based on the question below and the data above, provide an analysis or answ
 
         try:
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are a helpful CRM and RevOps assistant."},
                     {"role": "user", "content": prompt}
